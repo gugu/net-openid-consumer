@@ -1,17 +1,26 @@
-Makefile.PL
+.portupload.yml
 ChangeLog
-MANIFEST
-lib/Net/OpenID/Consumer.pm
-lib/Net/OpenID/VerifiedIdentity.pm
-lib/Net/OpenID/ClaimedIdentity.pm
+inc/Module/Install.pm
+inc/Module/Install/Base.pm
+inc/Module/Install/Can.pm
+inc/Module/Install/Fetch.pm
+inc/Module/Install/Makefile.pm
+inc/Module/Install/Metadata.pm
+inc/Module/Install/Win32.pm
+inc/Module/Install/WriteAll.pm
 lib/Net/OpenID/Association.pm
+lib/Net/OpenID/ClaimedIdentity.pm
+lib/Net/OpenID/Consumer.pm
 lib/Net/OpenID/IndirectMessage.pm
 lib/Net/OpenID/URIFetch.pm
+lib/Net/OpenID/VerifiedIdentity.pm
 lib/Net/OpenID/Yadis.pm
 lib/Net/OpenID/Yadis/Service.pm
+Makefile.PL
+MANIFEST			This list of files
+META.yml
+README
 t/00-use.t
 t/01-misc.t
 t/02-canonical.t
 t/03-messages.t
-
-META.yml                                 Module meta-data (added by MakeMaker)

@@ -9,7 +9,7 @@ use Storable;
 package Net::OpenID::Consumer;
 
 use vars qw($VERSION);
-$VERSION = "1.03";
+$VERSION = "1.04";
 
 use fields (
     'cache',           # a Cache object to store HTTP responses and associations
@@ -33,9 +33,9 @@ use Net::OpenID::URIFetch;
 
 use MIME::Base64 ();
 use Digest::SHA1 ();
-use Crypt::DH 0.05;
 use Time::Local;
 use HTTP::Request;
+use Math::BigInt;
 
 sub new {
     my Net::OpenID::Consumer $self = shift;
@@ -808,7 +808,7 @@ sub verified_identity {
             $token .= "$param:$val\n";
             $signed_fields{$param} = $val;
         }
-
+        utf8::encode( $token );
         my $good_sig = OpenID::util::b64(OpenID::util::hmac_sha1($token, $assoc->secret));
         return $self->_fail("signature_mismatch") unless $sig64 eq $good_sig;
 
@@ -1032,7 +1032,7 @@ sub w3c_to_time {
 }
 
 sub bi2bytes {
-    my $bigint = shift;
+    my $bigint = Math::BigInt->new(shift);
     die "Can't deal with negative numbers" if $bigint->is_negative;
 
     my $bits = $bigint->as_bin;

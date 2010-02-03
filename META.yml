@@ -1,18 +1,31 @@
-# http://module-build.sourceforge.net/META-spec.html
-#XXXXXXX This is a prototype!!!  It will change in the future!!! XXXXX#
-name:         Net-OpenID-Consumer
-version:      1.03
-version_from: lib/Net/OpenID/Consumer.pm
-installdirs:  site
-requires:
-    Crypt::DH:                     0.05
-    Digest::SHA1:                  0
-    HTTP::Request:                 0
-    LWP::UserAgent:                0
-    MIME::Base64:                  0
-    Time::Local:                   0
-    URI:                           0
-    XML::Simple:                   0
-
+---
+abstract: 'library for consumers of OpenID identities'
+author:
+  - 'Brad Fitzpatrick.'
+build_requires:
+  ExtUtils::MakeMaker: 6.42
+configure_requires:
+  ExtUtils::MakeMaker: 6.42
 distribution_type: module
-generated_by: ExtUtils::MakeMaker version 6.30_01
+generated_by: 'Module::Install version 0.92'
+license: gpl
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.4.html
+  version: 1.4
+name: Net-OpenID-Consumer
+no_index:
+  directory:
+    - inc
+    - t
+requires:
+  Crypt::DH::GMP: 0.0.5
+  Digest::SHA1: 0
+  HTTP::Request: 0
+  LWP::UserAgent: 0
+  MIME::Base64: 0
+  Time::Local: 0
+  URI: 0
+  XML::Simple: 0
+resources:
+  license: http://opensource.org/licenses/gpl-license.php
+version: 1.04
