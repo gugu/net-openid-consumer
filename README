@@ -1,0 +1,309 @@
+NAME
+    Net::OpenID::Consumer - library for consumers of OpenID identities
+
+SYNOPSIS
+      use Net::OpenID::Consumer;
+
+      my $csr = Net::OpenID::Consumer->new(
+        ua    => LWPx::ParanoidAgent->new,
+        cache => Some::Cache->new,
+        args  => $cgi,
+        consumer_secret => ...,
+        required_root => "http://site.example.com/",
+      );
+
+      # a user entered, say, "bradfitz.com" as their identity.  The first
+      # step is to fetch that page, parse it, and get a
+      # Net::OpenID::ClaimedIdentity object:
+
+      my $claimed_identity = $csr->claimed_identity("bradfitz.com");
+
+      # now your app has to send them at their identity server's endpoint
+      # to get redirected to either a positive assertion that they own
+      # that identity, or where they need to go to login/setup trust/etc.
+
+      my $check_url = $claimed_identity->check_url(
+        return_to  => "http://example.com/openid-check.app?yourarg=val",
+        trust_root => "http://example.com/",
+      );
+
+      # so you send the user off there, and then they come back to
+      # openid-check.app, then you see what the identity server said.
+
+      # Either use callback-based API (recommended)...
+      $csr->handle_server_response(
+          not_openid => sub {
+              die "Not an OpenID message";
+          },
+          setup_required => sub {
+              my $setup_url = shift;
+              # Redirect the user to $setup_url
+          },
+          cancelled => sub {
+              # Do something appropriate when the user hits "cancel" at the OP
+          },
+          verified => sub {
+              my $vident = shift;
+              # Do something with the VerifiedIdentity object $vident
+          },
+          error => sub {
+              my $err = shift;
+              die($err);
+          },
+      );
+
+      # ... or handle the various cases yourself
+      if (my $setup_url = $csr->user_setup_url) {
+           # redirect/link/popup user to $setup_url
+      } elsif ($csr->user_cancel) {
+           # restore web app state to prior to check_url
+      } elsif (my $vident = $csr->verified_identity) {
+           my $verified_url = $vident->url;
+           print "You are $verified_url !";
+      } else {
+           die "Error validating identity: " . $csr->err;
+      }
+
+DESCRIPTION
+    This is the Perl API for (the consumer half of) OpenID, a distributed
+    identity system based on proving you own a URL, which is then your
+    identity. More information is available at:
+
+      http://openid.net/
+
+CONSTRUCTOR
+    "new"
+        my $csr = Net::OpenID::Consumer->new([ %opts ]);
+
+        You can set the "ua", "cache", "consumer_secret", "required_root",
+        "minimum_version" and "args" in the constructor. See the
+        corresponding method descriptions below.
+
+METHODS
+    $csr->ua($user_agent)
+    $csr->ua
+        Getter/setter for the LWP::UserAgent (or subclass) instance which
+        will be used when web donwloads are needed. It's highly recommended
+        that you use LWPx::ParanoidAgent, or at least read its documentation
+        so you're aware of why you should care.
+
+    $csr->cache($cache)
+    $csr->cache
+        Getter/setter for the optional (but recommended!) cache instance you
+        want to use for storing fetched parts of pages. (identity server
+        public keys, and the <head> section of user's HTML pages)
+
+        The $cache object can be anything that has a ->get($key) and
+        ->set($key,$value) methods. See URI::Fetch for more information.
+        This cache object is just passed to URI::Fetch directly.
+
+    $nos->consumer_secret($scalar)
+    $nos->consumer_secret($code)
+    $code = $nos->consumer_secret; ($secret) = $code->($time);
+        The consumer secret is used to generate self-signed nonces for the
+        return_to URL, to prevent spoofing.
+
+        In the simplest (and least secure) form, you configure a static
+        secret value with a scalar. If you use this method and change the
+        scalar value, any outstanding requests from the last 30 seconds or
+        so will fail.
+
+        The more robust (but more complicated) form is to supply a subref
+        that returns a secret based on the provided *$time*, a unix
+        timestamp. And if one doesn't exist for that time, create, store and
+        return it (with appropriate locking so you never return different
+        secrets for the same time.)
+
+        Your secret may not exceed 255 characters.
+
+    $csr->minimum_version(2)
+    $csr->minimum_version
+        Get or set the minimum OpenID protocol version supported. Currently
+        the only useful value you can set here is 2, which will cause 1.1
+        identifiers to fail discovery with the error
+        "protocol_version_incorrect".
+
+        In most cases you'll want to allow both 1.1 and 2.0 identifiers,
+        which is the default. If you want, you can set this property to 1 to
+        make this behavior explicit.
+
+    $csr->message($key)
+        Obtain a value from the message contained in the request arguments
+        with the given key. This can only be used to obtain core arguments,
+        not extension arguments.
+
+        Call this method without a $key argument to get a
+        Net::OpenID::IndirectMessage object representing the message.
+
+    $csr->args($ref)
+    $csr->args($param)
+    $csr->args
+        Can be used in 1 of 3 ways:
+
+        1. Setting the way which the Consumer instances obtains GET
+        parameters:
+
+        $csr->args( $reference )
+
+        Where $reference is either a HASH ref, CODE ref, Apache $r,
+        Apache::Request $apreq, or CGI.pm $cgi. If a CODE ref, the subref
+        must return the value given one argument (the parameter to retrieve)
+
+        If you pass in an Apache $r object, you must not have already called
+        $r->content as the consumer module will want to get the request
+        arguments out of here in the case of a POST request.
+
+        2. Get a paramater:
+
+        my $foo = $csr->args("foo");
+
+        When given an unblessed scalar, it retrieves the value. It croaks if
+        you haven't defined a way to get at the parameters.
+
+        Most callers should instead use the "message" method above, which
+        abstracts away the need to understand OpenID's message
+        serialization.
+
+        3. Get the getter:
+
+        my $code = $csr->args;
+
+        Without arguments, returns a subref that returns the value given a
+        parameter name.
+
+        Most callers should instead use the "message" method above with no
+        arguments, which returns an object from which extension attributes
+        can be obtained by their documented namespace URI.
+
+    $nos->required_root($url_prefix)
+    $url_prefix = $nos->required_root
+        If provided, this is the required string that all return_to URLs
+        must start with. If it doesn't match, it'll be considered invalid
+        (spoofed from another site)
+
+    $csr->claimed_identity($url)
+        Given a user-entered $url (which could be missing http://, or have
+        extra whitespace, etc), returns either a
+        Net::OpenID::ClaimedIdentity object, or undef on failure.
+
+        Note that this identity is NOT verified yet. It's only who the user
+        claims they are, but they could be lying.
+
+        If this method returns undef, you can rely on the following errors
+        codes (from $csr->errcode) to decide what to present to the user:
+
+        no_identity_server
+        empty_url
+        bogus_url
+        no_head_tag
+        url_fetch_err
+
+    $csr->handle_server_response( %callbacks );
+        When a request comes in that contains a response from an OpenID
+        provider, figure out what it means and dispatch to an appropriate
+        callback to handle the request. This is the callback-based
+        alternative to explicitly calling the methods below in the correct
+        sequence, and is recommended unless you need to do something
+        strange.
+
+        Anything you return from the selected callback function will be
+        returned by this method verbatim. This is useful if the caller needs
+        to return something different in each case.
+
+        The available callbacks are:
+
+        not_openid - the request isn't an OpenID response after all.
+        setup_required($setup_url) - the provider needs to present some UI
+        to the user before it can respond. Send the user to the given URL by
+        some means.
+        cancelled - the user cancelled the authentication request from the
+        provider's UI
+        verified($verified_identity) - the user's identity has been
+        successfully verified. A Net::OpenID::VerifiedIdentity object is
+        passed in.
+        error($errcode, $errmsg) - an error has occured. An error code and
+        message are provided.
+
+    $csr->user_setup_url( [ %opts ] )
+        Returns the URL the user must return to in order to login, setup
+        trust, or do whatever the identity server needs them to do in order
+        to make the identity assertion which they previously initiated by
+        entering their claimed identity URL. Returns undef if this setup URL
+        isn't required, in which case you should ask for the
+        verified_identity.
+
+        The base URL this this function returns can be modified by using the
+        following options in %opts:
+
+        "post_grant"
+            What you're asking the identity server to do with the user after
+            they setup trust. Can be either "return" or "close" to return
+            the user back to the return_to URL, or close the browser window
+            with JavaScript. If you don't specify, the behavior is undefined
+            (probably the user gets a dead-end page with a link back to the
+            return_to URL). In any case, the identity server can do whatever
+            it wants, so don't depend on this.
+
+    $csr->user_cancel
+        Returns true if the user declined to share their identity, false
+        otherwise. (This function is literally one line: returns true if
+        "openid.mode" eq "cancel")
+
+        It's then your job to restore your app to where it was prior to
+        redirecting them off to the user_setup_url, using the other query
+        parameters that you'd sent along in your return_to URL.
+
+    $csr->verified_identity( [ %opts ] )
+        Returns a Net::OpenID::VerifiedIdentity object, or undef.
+        Verification includes double-checking the reported identity URL
+        declares the identity server, verifying the signature, etc.
+
+        The options in %opts may contain:
+
+        "required_root"
+            Sets the required_root just for this request. Values returns to
+            its previous value afterwards.
+
+    $csr->err
+        Returns the last error, in form "errcode: errtext"
+
+    $csr->errcode
+        Returns the last error code.
+
+    $csr->errtext
+        Returns the last error text.
+
+    $csr->json_err
+        Returns the last error code/text in JSON format.
+
+COPYRIGHT
+    This module is Copyright (c) 2005 Brad Fitzpatrick. All rights reserved.
+
+    You may distribute under the terms of either the GNU General Public
+    License or the Artistic License, as specified in the Perl README file.
+    If you need more liberal licensing terms, please contact the maintainer.
+
+WARRANTY
+    This is free software. IT COMES WITHOUT WARRANTY OF ANY KIND.
+
+MAILING LIST
+    The Net::OpenID family of modules has a mailing list powered by Google
+    Groups. For more information, see
+    http://groups.google.com/group/openid-perl .
+
+SEE ALSO
+    OpenID website: http://openid.net/
+
+    Net::OpenID::ClaimedIdentity -- part of this module
+
+    Net::OpenID::VerifiedIdentity -- part of this module
+
+    Net::OpenID::Server -- another module, for acting like an OpenID server
+
+AUTHORS
+    Brad Fitzpatrick <brad@danga.com>
+
+    Tatsuhiko Miyagawa <miyagawa@sixapart.com>
+
+    Martin Atkins <mart@degeneration.co.uk>
+
