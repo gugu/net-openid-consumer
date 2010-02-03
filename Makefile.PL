@@ -9,4 +9,5 @@ requires 'URI'            => 0;
 requires 'Time::Local'    => 0;
 requires 'XML::Simple'    => 0;
 requires 'Crypt::DH::GMP' => '0.0.5';
+auto_provides;
 WriteAll();

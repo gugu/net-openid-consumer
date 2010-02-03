@@ -1,8 +1,9 @@
+package
+Net::OpenID::Association;
 use strict;
 use Carp ();
 
 ############################################################################
-package Net::OpenID::Association;
 use fields (
             'server',    # author-identity identity server endpoint
             'secret',    # the secret for this association

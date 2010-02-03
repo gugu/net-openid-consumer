@@ -17,6 +17,27 @@ no_index:
   directory:
     - inc
     - t
+provides:
+  Net::OpenID::ClaimedIdentity:
+    file: lib/Net/OpenID/ClaimedIdentity.pm
+  Net::OpenID::Consumer:
+    file: lib/Net/OpenID/Consumer.pm
+    version: 1.04
+  Net::OpenID::IndirectMessage:
+    file: lib/Net/OpenID/IndirectMessage.pm
+  Net::OpenID::URIFetch:
+    file: lib/Net/OpenID/URIFetch.pm
+  Net::OpenID::URIFetch::Response:
+    file: lib/Net/OpenID/URIFetch.pm
+  Net::OpenID::VerifiedIdentity:
+    file: lib/Net/OpenID/VerifiedIdentity.pm
+  Net::OpenID::Yadis:
+    file: lib/Net/OpenID/Yadis.pm
+    version: 0.05
+  Net::OpenID::Yadis::Service:
+    file: lib/Net/OpenID/Yadis/Service.pm
+  OpenID::util:
+    file: lib/Net/OpenID/Consumer.pm
 requires:
   Crypt::DH::GMP: 0.0.5
   Digest::SHA1: 0
