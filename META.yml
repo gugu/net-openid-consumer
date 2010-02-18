@@ -22,7 +22,7 @@ provides:
     file: lib/Net/OpenID/ClaimedIdentity.pm
   Net::OpenID::Consumer:
     file: lib/Net/OpenID/Consumer.pm
-    version: 1.04
+    version: 1.05
   Net::OpenID::IndirectMessage:
     file: lib/Net/OpenID/IndirectMessage.pm
   Net::OpenID::URIFetch:
@@ -49,4 +49,5 @@ requires:
   XML::Simple: 0
 resources:
   license: http://opensource.org/licenses/gpl-license.php
-version: 1.04
+  repository: git://github.com/gugu/net-openid-consumer.git
+version: 1.05
