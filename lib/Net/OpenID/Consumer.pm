@@ -99,6 +99,7 @@ sub _debug {
 # given something that can have GET arguments, returns a subref to get them:
 #   Apache
 #   Apache::Request
+#   Apache2::Request
 #   CGI
 #   HASH of get args
 #   CODE returning get arg, given key
