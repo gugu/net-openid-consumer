@@ -215,14 +215,14 @@ supports the basic OpenID 1.1 arguments and the extension arguments
 for Simple Registration.
 
 This class can operate on a normal hashref, a L<CGI> object, an L<Apache>
-object, an L<Apache::Request> object or an arbitrary C<CODE> ref that takes
-a key name as its first parameter and returns a value. However,
-if you use a coderef then extension arguments are not supported.
+object, an L<Apache::Request> object, an L<Apache2::Request> object, or an
+arbitrary C<CODE> ref that takes a key name as its first parameter and returns
+a value. However, if you use a coderef then extension arguments are not supported.
 
 If you pass in a hashref or a coderef it is your responsibility as the caller
 to check the HTTP request method and pass in the correct set of arguments. If
-you use an Apache, Apache::Request or CGI object then this module will do
-the right thing automatically.
+you use an Apache, Apache::Request, Apache2::Request, or CGI object then this
+module will do the right thing automatically.
 
 =head1 SYNOPSIS
 
